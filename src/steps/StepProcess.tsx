@@ -24,15 +24,7 @@ interface IProps {
 
 // TODO add type
 const getFrameBounds = (info: any) => ({
-  height:
-    info.frame === 0
-      ? info.maxHeight
-      : Math.floor(
-          Math.abs(
-            Math.cos((info.frame / (info.frameRate / info.tempo)) * Math.PI) *
-              (info.maxHeight - 1)
-          )
-        ) + 1,
+  height: info.frame === 0 ? info.maxHeight : Math.floor(Math.abs(Math.cos((info.frame / (info.frameRate / info.tempo)) * Math.PI) * (info.maxHeight - 2))) + 2,
 });
 
 const Step = ({ text, value, current, progress }: IStepProps) => {
@@ -44,7 +36,7 @@ const Step = ({ text, value, current, progress }: IStepProps) => {
     <Box sx={{ p: 2 }}>
       <Grid container alignItems="center">
         <Grid item xs={1}>
-          {isActive && <CircularProgress size="small" />}
+          {isActive && <CircularProgress />}
         </Grid>
         <Grid item xs={3}>
           {text}
@@ -73,6 +65,7 @@ export default function StepProcess({ ffmpeg }: IProps) {
     frameCount,
   } = useSelector((state: RootState) => state.fileInfo);
   const resDivider = useSelector((state: RootState) => state.resDivider);
+  const config = useSelector((state: RootState) => state.config);
   const dispatch = useDispatch();
 
   const width = orgWidth / resDivider;
@@ -80,24 +73,16 @@ export default function StepProcess({ ffmpeg }: IProps) {
 
   const [step, setStep] = useState(Operation.Extract);
   const [progress, setProgress] = useState(0);
-  const [log, setLog] = useState("");
+  // const [log, setLog] = useState("");
 
   const handleProcess = async () => {
     // Setup logging to element
-    ffmpeg.setLogger(({ type, message }) => {
-      setLog(message);
-
-      // if (operation.current !== Operation.Modify) {
-      const matches = message.match(/frame=\s+(\d+)/);
-      if (matches) {
-        setProgress((parseInt(matches[1]) / (frameCount - 1)) * 100);
-      }
-      // }
-    });
+    //adds tons of lag
+    //ffmpeg.setLogger(({ type, message }) => setLog(message));
 
     await ffmpeg.run(
       "-i",
-      "video.mp4",
+      "video",
       "-vn",
       "-c:a",
       "libvorbis",
@@ -109,7 +94,7 @@ export default function StepProcess({ ffmpeg }: IProps) {
     // Split file into frames
     await ffmpeg.run(
       "-i",
-      "video.mp4",
+      "video",
       "-vf",
       `scale=${width}:${height}`,
       "%d.png"
@@ -122,7 +107,7 @@ export default function StepProcess({ ffmpeg }: IProps) {
     let lastWidth = -1;
     let lastHeight = -1;
     let sameSizeCount = 0;
-    const compressionLevel = 50;
+    const compressionLevel = config.compression;
 
     for (let i = 0; i < frameCount; i++) {
       setProgress((i / frameCount) * 100);
@@ -154,8 +139,8 @@ export default function StepProcess({ ffmpeg }: IProps) {
 
       if (
         Math.abs(frameBounds.width - lastWidth) +
-          Math.abs(frameBounds.height - lastHeight) >
-          compressionLevel ||
+        Math.abs(frameBounds.height - lastHeight) >
+        compressionLevel ||
         i === frameCount - 1
       ) {
         // Convert to webm
@@ -171,7 +156,7 @@ export default function StepProcess({ ffmpeg }: IProps) {
           "-c:v",
           "vp8",
           "-b:v",
-          "1M",
+          "300K",
           "-crf",
           "10",
           "-vf",
@@ -229,7 +214,7 @@ export default function StepProcess({ ffmpeg }: IProps) {
     Promise.all([
       ffmpeg.FS("unlink", "list.txt"),
       ffmpeg.FS("unlink", "audio.webm"),
-      ffmpeg.FS("unlink", "video.mp4"),
+      ffmpeg.FS("unlink", "video"),
       ...new Array(frameCount)
         .fill(0)
         .map((_, i) => ffmpeg.FS("unlink", `${i + 1}.png`)),
@@ -245,35 +230,37 @@ export default function StepProcess({ ffmpeg }: IProps) {
 
   return (
     <div>
-      <Step
-        text="Extracting audio"
-        value={0}
-        current={step}
-        progress={progress}
-      />
-      <Divider />
-      <Step
-        text="Splitting into frames"
-        value={1}
-        current={step}
-        progress={progress}
-      />
-      <Divider />
-      <Step
-        text="Modifying frames"
-        value={2}
-        current={step}
-        progress={progress}
-      />
-      <Divider />
-      <Step
-        text="Creating final video"
-        value={3}
-        current={step}
-        progress={progress}
-      />
-      <Divider />
-      <Step text="Cleaning up" value={4} current={step} progress={progress} />
+      <Box mt={2} mb={2}>
+        <Step
+          text="Extracting audio"
+          value={0}
+          current={step}
+          progress={progress}
+        />
+        <Divider />
+        <Step
+          text="Splitting into frames"
+          value={1}
+          current={step}
+          progress={progress}
+        />
+        <Divider />
+        <Step
+          text="Modifying frames"
+          value={2}
+          current={step}
+          progress={progress}
+        />
+        <Divider />
+        <Step
+          text="Creating final video"
+          value={3}
+          current={step}
+          progress={progress}
+        />
+        <Divider />
+        <Step text="Cleaning up" value={4} current={step} progress={progress} />
+      </Box>
     </div>
   );
 }

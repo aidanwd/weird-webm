@@ -22,14 +22,12 @@ const Upload = ({ onUpload }: Props) => {
   });
 
   return (
-    <div {...getRootProps()}>
-      <input {...getInputProps()} />
-      {isDragActive ? (
-        <p>Drop the files here ...</p>
-      ) : (
-        <p>Drag 'n' drop some files here, or click to select files</p>
-      )}
-    </div>
+    <section className="container">
+      <div {...getRootProps({className: 'dropzone'})}>
+        <input {...getInputProps()} />
+        <p>Drag 'n' drop a video here, or click to select a video</p>
+      </div>
+    </section>
   );
 };
 

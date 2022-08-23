@@ -15,17 +15,22 @@ export default function StepUpload({ ffmpeg }: IProps) {
     const worker = new FFprobeWorker();
     const fileInfo = await worker.getFileInfo(file);
 
-    const videoInfo = fileInfo.streams[0];
+    const videoInfo = fileInfo.streams.find((element) => element.codec_type === "video");
+    if(videoInfo === undefined) return;
 
     const frameRate = parseInt(videoInfo.r_frame_rate.split("/")[0]);
     const frameCount = parseInt(videoInfo.nb_frames);
     const width = videoInfo.codec_width;
     const height = videoInfo.codec_height;
+    const duration = videoInfo.duration;
+    const videocodec = videoInfo.codec_name;
+    const streams = fileInfo.streams.length;
+
 
     // Load file into ffmpeg FS
-    await ffmpeg.FS("writeFile", "video.mp4", await fetchFile(file));
+    await ffmpeg.FS("writeFile", "video", await fetchFile(file));
 
-    dispatch(setFileInfo({ frameRate, frameCount, width, height }));
+    dispatch(setFileInfo({ frameRate, frameCount, width, height, duration, videocodec, streams }));
     dispatch(advanceStep());
   };
 

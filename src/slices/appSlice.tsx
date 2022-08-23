@@ -9,6 +9,12 @@ export const appSlice = createSlice({
       frameCount: 0,
       width: 0,
       height: 0,
+      duration: 0,
+      videocodec: "",
+      streams: 0,
+    },
+    config: {
+      compression: 10,
     },
     resDivider: 4,
     fileUrl: "",
@@ -23,9 +29,12 @@ export const appSlice = createSlice({
     setFileUrl: (state, action) => {
       state.fileUrl = action.payload;
     },
+    setConfig: (state, action) => {
+      state.config = action.payload;
+    },
   },
 });
 
-export const { advanceStep, setFileInfo, setFileUrl } = appSlice.actions;
+export const { advanceStep, setFileInfo, setFileUrl, setConfig } = appSlice.actions;
 
 export default appSlice.reducer;

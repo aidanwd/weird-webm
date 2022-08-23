@@ -1,15 +1,22 @@
-import Upload, { File } from "./Upload";
-import { FFprobeWorker } from "ffprobe-wasm";
-import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
-import { useState, useRef, useEffect } from "react";
+import { createFFmpeg } from "@ffmpeg/ffmpeg";
+import * as React from 'react';
+import { useEffect } from "react";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box'
+import '@fontsource/roboto';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
+
+import CssBaseline from '@mui/material/CssBaseline';
 import {
-  LinearProgress,
   Step,
   StepLabel,
   Stepper,
   Typography,
 } from "@mui/material";
 import { Container } from "@mui/system";
+import Grid from "@mui/material/Grid";
 import StepUpload from "./steps/StepUpload";
 import StepConfigure from "./steps/StepConfigure";
 import StepDone from "./steps/StepDone";
@@ -19,7 +26,7 @@ import StepProcess from "./steps/StepProcess";
 
 const ffmpeg = createFFmpeg({
   corePath: "https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js",
-  log: true,
+  log: false,
 });
 
 enum EStep {
@@ -28,6 +35,11 @@ enum EStep {
   Process,
   Done,
 }
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 function App() {
   const activeStep = useSelector((state: RootState) => state.activeStep);
@@ -37,31 +49,6 @@ function App() {
       ffmpeg.load();
     }
   }, []);
-
-  const handleUpload = async (file: File) => {
-    const worker = new FFprobeWorker();
-    const fileInfo = await worker.getFileInfo(file);
-
-    console.log(fileInfo);
-    console.log(file);
-
-    // Only load ffmpeg if it is not already loaded
-
-    const videoInfo = fileInfo.streams[0];
-
-    const frameRate = parseInt(videoInfo.r_frame_rate.split("/")[0]);
-    const frameCount = parseInt(videoInfo.nb_frames);
-    const width = videoInfo.codec_width / 4;
-    const height = videoInfo.codec_height / 4;
-
-    const data = await ffmpeg.FS("readFile", "final.webm");
-
-    const url = URL.createObjectURL(
-      new Blob([data.buffer], { type: "video/webm" })
-    );
-    // setVideoSrc(url);
-    console.log(url);
-  };
 
   const renderStep = () => {
     switch (activeStep) {
@@ -77,31 +64,33 @@ function App() {
   };
 
   return (
-    <Container>
-      <Typography component="h1" variant="h1">
-        Weird WebM
+    <React.Fragment>
+    <ThemeProvider theme={darkTheme}>
+    <CssBaseline />
+    <Container >
+    <Grid container spacing={0} direction="column" alignItems="center" justifyContent="center">
+      <Typography mt={2} mb={2} component="h4" variant="h4" > 
+        WackyWebM Creator
       </Typography>
+  </Grid>
       <Stepper activeStep={activeStep}>
         <Step>
-          <StepLabel>Upload 🔼</StepLabel>
+          <StepLabel>Upload Video</StepLabel>
         </Step>
         <Step>
-          <StepLabel>Configure 🔧</StepLabel>
+          <StepLabel>Configure</StepLabel>
         </Step>
         <Step>
-          <StepLabel>Process ⚙️</StepLabel>
+          <StepLabel>Process</StepLabel>
         </Step>
         <Step>
-          <StepLabel>Done 🔽</StepLabel>
+          <StepLabel>Done</StepLabel>
         </Step>
       </Stepper>
       {renderStep()}
-      {/* <div>{operationText}</div>
-      <div>{log}</div>
-      <LinearProgress variant="determinate" value={progress} />
-      <Upload onUpload={handleUpload} />
-       */}
     </Container>
+  </ThemeProvider>
+  </React.Fragment>
   );
 }
 
